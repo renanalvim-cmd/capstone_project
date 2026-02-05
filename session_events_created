@@ -1,0 +1,21 @@
+CREATE OR REPLACE TABLE `mixpanel-sa.renantest1.sessions_end` AS
+WITH DeduplicatedData AS (
+  SELECT
+    CAST(t.uuid AS STRING) AS device_id,
+    t.end_time AS end_time,
+    TO_JSON(t) AS parameters,
+    ROW_NUMBER() OVER (
+      PARTITION BY
+        t.session_id,
+        t.uuid
+      ORDER BY
+        t.end_time ASC -- Keeps the earliest instance based on occured_at
+    ) AS rn
+  FROM `mixpanel-sa.renantest1.sessions` AS t
+)
+SELECT
+  device_id,
+  end_time,
+  parameters
+FROM DeduplicatedData
+WHERE rn = 1
