@@ -1,0 +1,116 @@
+CREATE OR REPLACE TABLE `mixpanel-sa.renantest1.renantest6`
+AS
+WITH
+  DeduplicatedData AS (
+    SELECT
+      CAST(t.action AS STRING) AS event_name,
+      CAST(t.auth_uuid AS STRING) AS device_id,
+      CAST(t.client_id AS STRING) AS user_id,
+      t.occured_at AS event_time,
+      JSON_STRIP_NULLS(
+        JSON_OBJECT(
+          'has_photo',
+          IF(t.has_photo IS NOT NULL, TO_JSON(t.has_photo), NULL),
+          'length',
+          IF(t.length IS NOT NULL, TO_JSON(t.length), NULL),
+          'qty',
+          IF(t.qty IS NOT NULL, TO_JSON(t.qty), NULL),
+          'severity',
+          IF(
+            t.severity IS NOT NULL
+              AND t.severity
+                != '', TO_JSON(t.severity), NULL),
+  'hashTags', IF(t.hashTags IS NOT NULL AND t.hashTags != '', TO_JSON(t.hashTags), NULL), 'format',
+            IF(
+              t.format IS NOT NULL
+                AND t.format
+                  != '', TO_JSON(t.format), NULL),
+  'page', IF(t.page IS NOT NULL AND t.page != '', TO_JSON(t.page), NULL), 'quality',
+              IF(
+                t.quality IS NOT NULL
+                  AND t.quality
+                    != '', TO_JSON(t.quality), NULL),
+  'ticket_text', IF(t.ticket_text IS NOT NULL AND t.ticket_text != '', TO_JSON(t.ticket_text), NULL), 'category',
+                IF(
+                  t.category IS NOT NULL
+                    AND t.category
+                      != '', TO_JSON(t.category), NULL),
+  'ticket_id', IF(t.ticket_id IS NOT NULL AND t.ticket_id != '', TO_JSON(t.ticket_id), NULL), 'auth_uuid',
+                  IF(
+                    t.auth_uuid IS NOT NULL
+                      AND t.auth_uuid
+                        != '', TO_JSON(t.auth_uuid), NULL),
+  'utm_source', IF(t.utm_source IS NOT NULL AND t.utm_source != '', TO_JSON(t.utm_source), NULL), 'ui_control',
+                    IF(
+                      t.ui_control IS NOT NULL
+                        AND t.ui_control
+                          != '', TO_JSON(t.ui_control), NULL),
+  'colors', IF(t.colors IS NOT NULL AND t.colors != '', TO_JSON(t.colors), NULL), 'video_id',
+                      IF(t.video_id IS NOT NULL, TO_JSON(t.video_id), NULL),
+                      'amount',
+                      IF(t.amount IS NOT NULL, TO_JSON(t.amount), NULL),
+                      'client_id',
+                      IF(
+                        t.client_id IS NOT NULL
+                          AND t.client_id
+                            != '', TO_JSON(t.client_id), NULL),
+  'watchTimeSec', IF(t.watchTimeSec IS NOT NULL, TO_JSON(t.watchTimeSec), NULL),
+  'cart', IF(t.cart IS NOT NULL, TO_JSON(t.cart), NULL),
+  'country', IF(t.country IS NOT NULL AND t.country != '', TO_JSON(t.country), NULL), 'occured_at',
+                        IF(
+                          t.occured_at IS NOT NULL,
+                          TO_JSON(t.occured_at),
+                          NULL),
+                        'product_id',
+                        IF(
+                          t.product_id IS NOT NULL,
+                          TO_JSON(t.product_id),
+                          NULL),
+                        'action',
+                        IF(
+                          t.action IS NOT NULL
+                            AND t.action
+                              != '', TO_JSON(t.action), NULL),
+  'server_metaData', IF(t.server_metaData IS NOT NULL, TO_JSON(t.server_metaData), NULL),
+  'region', IF(t.region IS NOT NULL AND t.region != '', TO_JSON(t.region), NULL), 'country_code',
+                          IF(
+                            t.country_code IS NOT NULL
+                              AND t.country_code
+                                != '', TO_JSON(t.country_code), NULL),
+  'city', IF(t.city IS NOT NULL AND t.city != '', TO_JSON(t.city), NULL), 'linked_device',
+                            IF(
+                              t.linked_device IS NOT NULL,
+                              TO_JSON(t.linked_device),
+                              NULL),
+                            'has_replies',
+                            IF(
+                              t.has_replies IS NOT NULL,
+                              TO_JSON(t.has_replies),
+                              NULL),
+                            'currency',
+                            IF(
+                              t.currency IS NOT NULL
+                              AND t.currency
+                                != '', TO_JSON(t.currency), NULL)
+)) AS parameters,
+    ROW_NUMBER() OVER (
+      PARTITION BY
+        t.server_metaData.request.id,
+        t.server_metaData.application.environment,
+        t.occured_at,
+        t.client_id,
+        t.action
+      ORDER BY
+        t.occured_at ASC -- Keeps the earliest instance based on occured_at
+    ) AS rn
+  FROM `mixpanel-sa.renantest1.renantest3` AS t
+)
+SELECT
+  event_name,
+  user_id,
+  event_time,
+  device_id,
+  parameters
+FROM DeduplicatedData
+WHERE rn = 1
+
