@@ -1,0 +1,40 @@
+CREATE TABLE `mixpanel-sa.renantest1.users2`
+AS
+SELECT
+  distinct_id,
+  JSON_OBJECT(
+    '$name',
+    name,
+    '$email',
+    email,
+    '$avatar',
+    avatar,
+    '$created',
+    created,
+    '$city',
+    city,
+    '$region',
+    region,
+    '$country_code',
+    country_code,
+    'ip',
+    ip,
+    'experiment',
+    experiment,
+    'luckyNumber',
+    luckyNumber,
+    'title',
+    title,
+    'sessionIds',
+    sessionIds,
+    'anonymousIds',
+    anonymousIds,
+    'spiritAnimal',
+    spiritAnimal,
+    'timezone',
+    timezone,
+    'country',
+    country)
+    AS json_data
+FROM `mixpanel-sa.renantest1.users`;
+
